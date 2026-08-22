@@ -22,6 +22,8 @@ export type VerificationStatus = 'PENDING' | 'CONFIRMED' | 'CORRECTED';
 export type ActionStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'NEEDS_HELP';
 export type ActionType = 'MANUAL' | 'CALL' | 'OPEN_URL' | 'PREPARE_DOCUMENTS';
 export type ReminderStatus = 'ACTIVE' | 'CANCELLED';
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
+export type PushDeliveryStatus = 'NOT_ATTEMPTED' | 'SENT' | 'NO_DEVICE' | 'FAILED';
 
 export interface User {
   id: string;
@@ -217,6 +219,30 @@ export interface Reminder {
   remind_at: string;
   status: ReminderStatus;
   device_notification_id?: string | null;
+}
+
+export interface ApprovalRequest {
+  id: string;
+  document_id: string;
+  action_id?: string | null;
+  relationship_id: string;
+  owner_name: string;
+  guardian_name: string;
+  document_title: string;
+  easy_summary: string;
+  amount?: string | null;
+  due_date?: string | null;
+  action_title?: string | null;
+  action_description?: string | null;
+  status: ApprovalStatus;
+  delivery_status: PushDeliveryStatus;
+  official_url_available: boolean;
+  payment_url?: string | null;
+  source_anchor?: SourceAnchor | null;
+  expires_at: string;
+  decided_at?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AuditEvent {

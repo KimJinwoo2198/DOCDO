@@ -12,6 +12,7 @@ import { ApiError } from '@/api/client';
 import { AccessibilityProvider } from '@/accessibility/AccessibilityContext';
 import { AuthProvider } from '@/auth/AuthContext';
 import { ReminderSync } from '@/components/ReminderSync';
+import { PushNotificationSync } from '@/pushNotifications';
 import { colors } from '@/theme';
 
 const queryClient = new QueryClient({
@@ -40,6 +41,7 @@ export default function RootLayout() {
       <AuthProvider>
         <AccessibilityProvider>
           <ReminderSync />
+          <PushNotificationSync />
           <StatusBar style="dark" />
           <Stack
             screenOptions={{
@@ -56,6 +58,7 @@ export default function RootLayout() {
             <Stack.Screen name="document/[id]" />
             <Stack.Screen name="document/ask" />
             <Stack.Screen name="document/confirm-request" />
+            <Stack.Screen name="approval/[id]" />
           </Stack>
         </AccessibilityProvider>
       </AuthProvider>

@@ -78,6 +78,21 @@ class ReminderStatus(StrEnum):
     CANCELLED = "CANCELLED"
 
 
+class ApprovalStatus(StrEnum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    EXPIRED = "EXPIRED"
+    CANCELLED = "CANCELLED"
+
+
+class PushDeliveryStatus(StrEnum):
+    NOT_ATTEMPTED = "NOT_ATTEMPTED"
+    SENT = "SENT"
+    NO_DEVICE = "NO_DEVICE"
+    FAILED = "FAILED"
+
+
 class SharePermission(StrEnum):
     VIEW_RESULT = "VIEW_RESULT"
     VIEW_ORIGINAL = "VIEW_ORIGINAL"

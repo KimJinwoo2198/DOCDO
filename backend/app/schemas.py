@@ -9,9 +9,11 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.domain import (
     ActionStatus,
     ActionType,
+    ApprovalStatus,
     DocumentCategory,
     DocumentStatus,
     FieldType,
+    PushDeliveryStatus,
     RelationshipStatus,
     ReminderStatus,
     SharePermission,
@@ -256,6 +258,59 @@ class ReminderOut(BaseModel):
     remind_at: datetime
     status: ReminderStatus
     device_notification_id: str | None
+
+
+class PushDeviceCreate(BaseModel):
+    expo_push_token: str = Field(
+        min_length=20,
+        max_length=255,
+        pattern=r"^(Expo|Exponent)PushToken\[[A-Za-z0-9_-]+\]$",
+    )
+    platform: Literal["android", "ios"]
+
+
+class PushDeviceUnregister(BaseModel):
+    expo_push_token: str = Field(min_length=20, max_length=255)
+
+
+class PushDeviceOut(BaseModel):
+    id: uuid.UUID
+    platform: Literal["android", "ios"]
+    created_at: datetime
+    updated_at: datetime
+
+
+class ApprovalRequestCreate(BaseModel):
+    relationship_id: uuid.UUID
+    action_id: uuid.UUID | None = None
+
+
+class ApprovalDecisionRequest(BaseModel):
+    decision: Literal["APPROVE", "REJECT"]
+
+
+class ApprovalRequestOut(BaseModel):
+    id: uuid.UUID
+    document_id: uuid.UUID
+    action_id: uuid.UUID | None
+    relationship_id: uuid.UUID
+    owner_name: str
+    guardian_name: str
+    document_title: str
+    easy_summary: str
+    amount: str | None
+    due_date: str | None
+    action_title: str | None
+    action_description: str | None
+    status: ApprovalStatus
+    delivery_status: PushDeliveryStatus
+    official_url_available: bool
+    payment_url: str | None
+    source_anchor: SourceAnchor | None
+    expires_at: datetime
+    decided_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
 
 
 class DashboardActionOut(BaseModel):

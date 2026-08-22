@@ -138,6 +138,7 @@ class MockDocumentParser(DocumentParser):
                 "납부 금액 58,320원",
                 "납부 기한 2026년 9월 10일",
                 "문의 한국전력 123",
+                "공식 납부 https://online.kepco.co.kr/MIM041D92",
             ]
         elements = [
             ParsedElement(
@@ -263,6 +264,9 @@ class MockDocumentUnderstandingProvider(DocumentUnderstandingProvider):
             )
         due_anchor = _anchor("p1-e3", "납부 기한 2026년 9월 10일")
         amount_anchor = _anchor("p1-e2", "납부 금액 58,320원")
+        payment_anchor = _anchor(
+            "p1-e5", "공식 납부 https://online.kepco.co.kr/MIM041D92"
+        )
         return DocumentUnderstanding(
             category=DocumentCategory.BILL,
             title="전기요금 납부 고지서",
@@ -308,9 +312,9 @@ class MockDocumentUnderstandingProvider(DocumentUnderstandingProvider):
                     linked_field_key="due_date",
                     due_at="2026-09-10T09:00:00+09:00",
                     impact_if_missed="문서에 적힌 납부 기한을 놓칠 수 있어요.",
-                    action_type=ActionType.CALL,
-                    action_value="123",
-                    source_anchor=due_anchor,
+                    action_type=ActionType.OPEN_URL,
+                    action_value="https://online.kepco.co.kr/MIM041D92",
+                    source_anchor=payment_anchor,
                 )
             ],
         )

@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { api } from '@/api/client';
+import { clearPushToken, loadPushToken } from '@/api/pushTokenStore';
 import { clearTokens, loadTokens } from '@/api/tokenStore';
 import type { User, UserRole } from '@/types';
 
@@ -51,12 +52,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    const pushToken = await loadPushToken();
+    if (pushToken) await api.unregisterPushToken(pushToken).catch(() => undefined);
+    await clearPushToken();
     await api.logout();
     queryClient.clear();
     setUser(null);
   }, [queryClient]);
 
   const deleteAccount = useCallback(async () => {
+    const pushToken = await loadPushToken();
+    if (pushToken) await api.unregisterPushToken(pushToken).catch(() => undefined);
+    await clearPushToken();
     await api.deleteMe();
     await clearTokens();
     queryClient.clear();

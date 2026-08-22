@@ -22,9 +22,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 from app.domain import (
     ActionStatus,
+    ApprovalStatus,
     DocumentCategory,
     DocumentStatus,
     InvitationStatus,
+    PushDeliveryStatus,
     RelationshipStatus,
     ReminderStatus,
     UserRole,
@@ -55,6 +57,9 @@ class User(TimestampMixin, Base):
     )
     documents: Mapped[list[Document]] = relationship(
         back_populates="owner", cascade="all, delete-orphan"
+    )
+    push_devices: Mapped[list[PushDevice]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
     )
 
 
@@ -311,6 +316,56 @@ class Reminder(TimestampMixin, Base):
     action: Mapped[ActionItem] = relationship(back_populates="reminders", lazy="selectin")
 
 
+class PushDevice(TimestampMixin, Base):
+    __tablename__ = "push_devices"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    expo_push_token: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    platform: Mapped[str] = mapped_column(String(16))
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+    user: Mapped[User] = relationship(back_populates="push_devices")
+
+
+class ApprovalRequest(TimestampMixin, Base):
+    __tablename__ = "approval_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    document_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("documents.id", ondelete="CASCADE"), index=True
+    )
+    action_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("action_items.id", ondelete="CASCADE"), index=True
+    )
+    relationship_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("care_relationships.id", ondelete="CASCADE"), index=True
+    )
+    requested_by_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    guardian_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(24), default=ApprovalStatus.PENDING.value, index=True
+    )
+    delivery_status: Mapped[str] = mapped_column(
+        String(24), default=PushDeliveryStatus.NOT_ATTEMPTED.value, index=True
+    )
+    push_ticket_id: Mapped[str | None] = mapped_column(String(120))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    document: Mapped[Document] = relationship(lazy="selectin")
+    action: Mapped[ActionItem | None] = relationship(lazy="selectin")
+    care_relationship: Mapped[CareRelationship] = relationship(lazy="selectin")
+    requester: Mapped[User] = relationship(foreign_keys=[requested_by_id], lazy="selectin")
+    guardian: Mapped[User] = relationship(foreign_keys=[guardian_id], lazy="selectin")
+
+
 class AuditEvent(Base):
     __tablename__ = "audit_events"
 
@@ -365,3 +420,4 @@ class ProviderAudit(Base):
 
 Index("ix_action_items_due_status", ActionItem.due_at, ActionItem.status)
 Index("ix_document_shares_active", DocumentShare.document_id, DocumentShare.revoked_at)
+Index("ix_approval_requests_guardian_status", ApprovalRequest.guardian_id, ApprovalRequest.status)

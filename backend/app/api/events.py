@@ -23,7 +23,7 @@ ALLOWED_PROPERTY_VALUES = {
     "screen": {"document_detail", "dashboard", "documents", "care", "profile"},
     "category": {"BILL", "PUBLIC_NOTICE", "INSURANCE_FINANCE", "UNSUPPORTED"},
     "reason": {"provider_failure", "network", "permission", "validation", "unknown"},
-    "method": {"sms", "kakao", "call"},
+    "method": {"app", "sms", "kakao", "call"},
     "accessible": {"on", "off"},
 }
 

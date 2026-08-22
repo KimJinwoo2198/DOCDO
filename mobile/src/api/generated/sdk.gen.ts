@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptInvitationV1CareInvitationsAcceptPostData, AcceptInvitationV1CareInvitationsAcceptPostErrors, AcceptInvitationV1CareInvitationsAcceptPostResponses, ConfirmFieldV1DocumentsDocumentIdFieldsFieldIdPatchData, ConfirmFieldV1DocumentsDocumentIdFieldsFieldIdPatchErrors, ConfirmFieldV1DocumentsDocumentIdFieldsFieldIdPatchResponses, CreateDocumentV1DocumentsPostData, CreateDocumentV1DocumentsPostErrors, CreateDocumentV1DocumentsPostResponses, CreateInvitationV1CareInvitationsPostData, CreateInvitationV1CareInvitationsPostResponses, CreateReminderV1RemindersPostData, CreateReminderV1RemindersPostErrors, CreateReminderV1RemindersPostResponses, DashboardV1DashboardGetData, DashboardV1DashboardGetResponses, DeleteDocumentV1DocumentsDocumentIdDeleteData, DeleteDocumentV1DocumentsDocumentIdDeleteErrors, DeleteDocumentV1DocumentsDocumentIdDeleteResponses, DeleteMeV1UsersMeDeleteData, DeleteMeV1UsersMeDeleteResponses, DeleteReminderV1RemindersReminderIdDeleteData, DeleteReminderV1RemindersReminderIdDeleteErrors, DeleteReminderV1RemindersReminderIdDeleteResponses, DocumentActivityV1DocumentsDocumentIdActivityGetData, DocumentActivityV1DocumentsDocumentIdActivityGetErrors, DocumentActivityV1DocumentsDocumentIdActivityGetResponses, GetDocumentPageV1DocumentsDocumentIdPagesPageIdGetData, GetDocumentPageV1DocumentsDocumentIdPagesPageIdGetErrors, GetDocumentPageV1DocumentsDocumentIdPagesPageIdGetResponses, GetDocumentV1DocumentsDocumentIdGetData, GetDocumentV1DocumentsDocumentIdGetErrors, GetDocumentV1DocumentsDocumentIdGetResponses, GetMeV1UsersMeGetData, GetMeV1UsersMeGetResponses, GetProfileV1ProfileGetData, GetProfileV1ProfileGetResponses, HealthHealthGetData, HealthHealthGetResponses, ListDocumentsV1DocumentsGetData, ListDocumentsV1DocumentsGetResponses, ListRelationshipsV1CareRelationshipsGetData, ListRelationshipsV1CareRelationshipsGetResponses, ListRemindersV1RemindersGetData, ListRemindersV1RemindersGetResponses, ListSharesV1DocumentsDocumentIdSharesGetData, ListSharesV1DocumentsDocumentIdSharesGetErrors, ListSharesV1DocumentsDocumentIdSharesGetResponses, LoginV1AuthLoginPostData, LoginV1AuthLoginPostErrors, LoginV1AuthLoginPostResponses, LogoutV1AuthLogoutPostData, LogoutV1AuthLogoutPostErrors, LogoutV1AuthLogoutPostResponses, ReanalyzeDocumentV1DocumentsDocumentIdReanalyzePostData, ReanalyzeDocumentV1DocumentsDocumentIdReanalyzePostErrors, ReanalyzeDocumentV1DocumentsDocumentIdReanalyzePostResponses, RecordEventV1EventsPostData, RecordEventV1EventsPostErrors, RecordEventV1EventsPostResponses, RefreshV1AuthRefreshPostData, RefreshV1AuthRefreshPostErrors, RefreshV1AuthRefreshPostResponses, RegisterV1AuthRegisterPostData, RegisterV1AuthRegisterPostErrors, RegisterV1AuthRegisterPostResponses, ReplaceDocumentPagesV1DocumentsDocumentIdPagesPostData, ReplaceDocumentPagesV1DocumentsDocumentIdPagesPostErrors, ReplaceDocumentPagesV1DocumentsDocumentIdPagesPostResponses, RevokeRelationshipV1CareRelationshipsRelationshipIdDeleteData, RevokeRelationshipV1CareRelationshipsRelationshipIdDeleteErrors, RevokeRelationshipV1CareRelationshipsRelationshipIdDeleteResponses, RevokeShareV1DocumentsDocumentIdSharesShareIdDeleteData, RevokeShareV1DocumentsDocumentIdSharesShareIdDeleteErrors, RevokeShareV1DocumentsDocumentIdSharesShareIdDeleteResponses, SessionV1AuthSessionGetData, SessionV1AuthSessionGetResponses, UpdateActionV1DocumentsDocumentIdActionsActionIdPatchData, UpdateActionV1DocumentsDocumentIdActionsActionIdPatchErrors, UpdateActionV1DocumentsDocumentIdActionsActionIdPatchResponses, UpdateProfileV1ProfilePatchData, UpdateProfileV1ProfilePatchErrors, UpdateProfileV1ProfilePatchResponses, UpdateReminderV1RemindersReminderIdPatchData, UpdateReminderV1RemindersReminderIdPatchErrors, UpdateReminderV1RemindersReminderIdPatchResponses, UpsertShareV1DocumentsDocumentIdSharesPostData, UpsertShareV1DocumentsDocumentIdSharesPostErrors, UpsertShareV1DocumentsDocumentIdSharesPostResponses } from './types.gen';
+import type { AcceptInvitationV1CareInvitationsAcceptPostData, AcceptInvitationV1CareInvitationsAcceptPostErrors, AcceptInvitationV1CareInvitationsAcceptPostResponses, AskDocumentQuestionV1DocumentsDocumentIdQuestionsPostData, AskDocumentQuestionV1DocumentsDocumentIdQuestionsPostErrors, AskDocumentQuestionV1DocumentsDocumentIdQuestionsPostResponses, ConfirmFieldV1DocumentsDocumentIdFieldsFieldIdPatchData, ConfirmFieldV1DocumentsDocumentIdFieldsFieldIdPatchErrors, ConfirmFieldV1DocumentsDocumentIdFieldsFieldIdPatchResponses, CreateApprovalRequestV1DocumentsDocumentIdApprovalRequestsPostData, CreateApprovalRequestV1DocumentsDocumentIdApprovalRequestsPostErrors, CreateApprovalRequestV1DocumentsDocumentIdApprovalRequestsPostResponses, CreateDocumentV1DocumentsPostData, CreateDocumentV1DocumentsPostErrors, CreateDocumentV1DocumentsPostResponses, CreateInvitationV1CareInvitationsPostData, CreateInvitationV1CareInvitationsPostResponses, CreateReminderV1RemindersPostData, CreateReminderV1RemindersPostErrors, CreateReminderV1RemindersPostResponses, DashboardV1DashboardGetData, DashboardV1DashboardGetResponses, DecideApprovalRequestV1ApprovalRequestsRequestIdPatchData, DecideApprovalRequestV1ApprovalRequestsRequestIdPatchErrors, DecideApprovalRequestV1ApprovalRequestsRequestIdPatchResponses, DeleteDocumentV1DocumentsDocumentIdDeleteData, DeleteDocumentV1DocumentsDocumentIdDeleteErrors, DeleteDocumentV1DocumentsDocumentIdDeleteResponses, DeleteMeV1UsersMeDeleteData, DeleteMeV1UsersMeDeleteResponses, DeleteReminderV1RemindersReminderIdDeleteData, DeleteReminderV1RemindersReminderIdDeleteErrors, DeleteReminderV1RemindersReminderIdDeleteResponses, DocumentActivityV1DocumentsDocumentIdActivityGetData, DocumentActivityV1DocumentsDocumentIdActivityGetErrors, DocumentActivityV1DocumentsDocumentIdActivityGetResponses, DocumentQuestionSuggestionsV1DocumentsDocumentIdQuestionSuggestionsGetData, DocumentQuestionSuggestionsV1DocumentsDocumentIdQuestionSuggestionsGetErrors, DocumentQuestionSuggestionsV1DocumentsDocumentIdQuestionSuggestionsGetResponses, GetApprovalRequestV1ApprovalRequestsRequestIdGetData, GetApprovalRequestV1ApprovalRequestsRequestIdGetErrors, GetApprovalRequestV1ApprovalRequestsRequestIdGetResponses, GetCarePreferencesV1CarePreferencesGetData, GetCarePreferencesV1CarePreferencesGetResponses, GetDocumentPageV1DocumentsDocumentIdPagesPageIdGetData, GetDocumentPageV1DocumentsDocumentIdPagesPageIdGetErrors, GetDocumentPageV1DocumentsDocumentIdPagesPageIdGetResponses, GetDocumentV1DocumentsDocumentIdGetData, GetDocumentV1DocumentsDocumentIdGetErrors, GetDocumentV1DocumentsDocumentIdGetResponses, GetMeV1UsersMeGetData, GetMeV1UsersMeGetResponses, GetProfileV1ProfileGetData, GetProfileV1ProfileGetResponses, HealthHealthGetData, HealthHealthGetResponses, ListApprovalRequestsV1ApprovalRequestsGetData, ListApprovalRequestsV1ApprovalRequestsGetResponses, ListDocumentsV1DocumentsGetData, ListDocumentsV1DocumentsGetResponses, ListRelationshipsV1CareRelationshipsGetData, ListRelationshipsV1CareRelationshipsGetResponses, ListRemindersV1RemindersGetData, ListRemindersV1RemindersGetResponses, ListSharesV1DocumentsDocumentIdSharesGetData, ListSharesV1DocumentsDocumentIdSharesGetErrors, ListSharesV1DocumentsDocumentIdSharesGetResponses, LoginV1AuthLoginPostData, LoginV1AuthLoginPostErrors, LoginV1AuthLoginPostResponses, LogoutV1AuthLogoutPostData, LogoutV1AuthLogoutPostErrors, LogoutV1AuthLogoutPostResponses, ReanalyzeDocumentV1DocumentsDocumentIdReanalyzePostData, ReanalyzeDocumentV1DocumentsDocumentIdReanalyzePostErrors, ReanalyzeDocumentV1DocumentsDocumentIdReanalyzePostResponses, RecordEventV1EventsPostData, RecordEventV1EventsPostErrors, RecordEventV1EventsPostResponses, RefreshV1AuthRefreshPostData, RefreshV1AuthRefreshPostErrors, RefreshV1AuthRefreshPostResponses, RegisterPushDeviceV1PushTokensPostData, RegisterPushDeviceV1PushTokensPostErrors, RegisterPushDeviceV1PushTokensPostResponses, RegisterV1AuthRegisterPostData, RegisterV1AuthRegisterPostErrors, RegisterV1AuthRegisterPostResponses, ReplaceDocumentPagesV1DocumentsDocumentIdPagesPostData, ReplaceDocumentPagesV1DocumentsDocumentIdPagesPostErrors, ReplaceDocumentPagesV1DocumentsDocumentIdPagesPostResponses, ResendApprovalNotificationV1ApprovalRequestsRequestIdNotifyPostData, ResendApprovalNotificationV1ApprovalRequestsRequestIdNotifyPostErrors, ResendApprovalNotificationV1ApprovalRequestsRequestIdNotifyPostResponses, RevokeRelationshipV1CareRelationshipsRelationshipIdDeleteData, RevokeRelationshipV1CareRelationshipsRelationshipIdDeleteErrors, RevokeRelationshipV1CareRelationshipsRelationshipIdDeleteResponses, RevokeShareV1DocumentsDocumentIdSharesShareIdDeleteData, RevokeShareV1DocumentsDocumentIdSharesShareIdDeleteErrors, RevokeShareV1DocumentsDocumentIdSharesShareIdDeleteResponses, SessionV1AuthSessionGetData, SessionV1AuthSessionGetResponses, UnregisterPushDeviceV1PushTokensUnregisterPostData, UnregisterPushDeviceV1PushTokensUnregisterPostErrors, UnregisterPushDeviceV1PushTokensUnregisterPostResponses, UpdateActionV1DocumentsDocumentIdActionsActionIdPatchData, UpdateActionV1DocumentsDocumentIdActionsActionIdPatchErrors, UpdateActionV1DocumentsDocumentIdActionsActionIdPatchResponses, UpdateCarePreferencesV1CarePreferencesPatchData, UpdateCarePreferencesV1CarePreferencesPatchErrors, UpdateCarePreferencesV1CarePreferencesPatchResponses, UpdateProfileV1ProfilePatchData, UpdateProfileV1ProfilePatchErrors, UpdateProfileV1ProfilePatchResponses, UpdateReminderV1RemindersReminderIdPatchData, UpdateReminderV1RemindersReminderIdPatchErrors, UpdateReminderV1RemindersReminderIdPatchResponses, UpsertShareV1DocumentsDocumentIdSharesPostData, UpsertShareV1DocumentsDocumentIdSharesPostErrors, UpsertShareV1DocumentsDocumentIdSharesPostResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -246,6 +246,28 @@ export const revokeShareV1DocumentsDocumentIdSharesShareIdDelete = <ThrowOnError
 });
 
 /**
+ * Document Question Suggestions
+ */
+export const documentQuestionSuggestionsV1DocumentsDocumentIdQuestionSuggestionsGet = <ThrowOnError extends boolean = false>(options: Options<DocumentQuestionSuggestionsV1DocumentsDocumentIdQuestionSuggestionsGetData, ThrowOnError>): RequestResult<DocumentQuestionSuggestionsV1DocumentsDocumentIdQuestionSuggestionsGetResponses, DocumentQuestionSuggestionsV1DocumentsDocumentIdQuestionSuggestionsGetErrors, ThrowOnError> => (options.client ?? client).get<DocumentQuestionSuggestionsV1DocumentsDocumentIdQuestionSuggestionsGetResponses, DocumentQuestionSuggestionsV1DocumentsDocumentIdQuestionSuggestionsGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/documents/{document_id}/question-suggestions',
+    ...options
+});
+
+/**
+ * Ask Document Question
+ */
+export const askDocumentQuestionV1DocumentsDocumentIdQuestionsPost = <ThrowOnError extends boolean = false>(options: Options<AskDocumentQuestionV1DocumentsDocumentIdQuestionsPostData, ThrowOnError>): RequestResult<AskDocumentQuestionV1DocumentsDocumentIdQuestionsPostResponses, AskDocumentQuestionV1DocumentsDocumentIdQuestionsPostErrors, ThrowOnError> => (options.client ?? client).post<AskDocumentQuestionV1DocumentsDocumentIdQuestionsPostResponses, AskDocumentQuestionV1DocumentsDocumentIdQuestionsPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/documents/{document_id}/questions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Document Activity
  */
 export const documentActivityV1DocumentsDocumentIdActivityGet = <ThrowOnError extends boolean = false>(options: Options<DocumentActivityV1DocumentsDocumentIdActivityGetData, ThrowOnError>): RequestResult<DocumentActivityV1DocumentsDocumentIdActivityGetResponses, DocumentActivityV1DocumentsDocumentIdActivityGetErrors, ThrowOnError> => (options.client ?? client).get<DocumentActivityV1DocumentsDocumentIdActivityGetResponses, DocumentActivityV1DocumentsDocumentIdActivityGetErrors, ThrowOnError>({
@@ -283,6 +305,28 @@ export const listRelationshipsV1CareRelationshipsGet = <ThrowOnError extends boo
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/care-relationships',
     ...options
+});
+
+/**
+ * Get Care Preferences
+ */
+export const getCarePreferencesV1CarePreferencesGet = <ThrowOnError extends boolean = false>(options?: Options<GetCarePreferencesV1CarePreferencesGetData, ThrowOnError>): RequestResult<GetCarePreferencesV1CarePreferencesGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetCarePreferencesV1CarePreferencesGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/care-preferences',
+    ...options
+});
+
+/**
+ * Update Care Preferences
+ */
+export const updateCarePreferencesV1CarePreferencesPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateCarePreferencesV1CarePreferencesPatchData, ThrowOnError>): RequestResult<UpdateCarePreferencesV1CarePreferencesPatchResponses, UpdateCarePreferencesV1CarePreferencesPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateCarePreferencesV1CarePreferencesPatchResponses, UpdateCarePreferencesV1CarePreferencesPatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/care-preferences',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -336,6 +380,85 @@ export const updateReminderV1RemindersReminderIdPatch = <ThrowOnError extends bo
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Register Push Device
+ */
+export const registerPushDeviceV1PushTokensPost = <ThrowOnError extends boolean = false>(options: Options<RegisterPushDeviceV1PushTokensPostData, ThrowOnError>): RequestResult<RegisterPushDeviceV1PushTokensPostResponses, RegisterPushDeviceV1PushTokensPostErrors, ThrowOnError> => (options.client ?? client).post<RegisterPushDeviceV1PushTokensPostResponses, RegisterPushDeviceV1PushTokensPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/push-tokens',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Unregister Push Device
+ */
+export const unregisterPushDeviceV1PushTokensUnregisterPost = <ThrowOnError extends boolean = false>(options: Options<UnregisterPushDeviceV1PushTokensUnregisterPostData, ThrowOnError>): RequestResult<UnregisterPushDeviceV1PushTokensUnregisterPostResponses, UnregisterPushDeviceV1PushTokensUnregisterPostErrors, ThrowOnError> => (options.client ?? client).post<UnregisterPushDeviceV1PushTokensUnregisterPostResponses, UnregisterPushDeviceV1PushTokensUnregisterPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/push-tokens/unregister',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create Approval Request
+ */
+export const createApprovalRequestV1DocumentsDocumentIdApprovalRequestsPost = <ThrowOnError extends boolean = false>(options: Options<CreateApprovalRequestV1DocumentsDocumentIdApprovalRequestsPostData, ThrowOnError>): RequestResult<CreateApprovalRequestV1DocumentsDocumentIdApprovalRequestsPostResponses, CreateApprovalRequestV1DocumentsDocumentIdApprovalRequestsPostErrors, ThrowOnError> => (options.client ?? client).post<CreateApprovalRequestV1DocumentsDocumentIdApprovalRequestsPostResponses, CreateApprovalRequestV1DocumentsDocumentIdApprovalRequestsPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/documents/{document_id}/approval-requests',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Approval Requests
+ */
+export const listApprovalRequestsV1ApprovalRequestsGet = <ThrowOnError extends boolean = false>(options?: Options<ListApprovalRequestsV1ApprovalRequestsGetData, ThrowOnError>): RequestResult<ListApprovalRequestsV1ApprovalRequestsGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListApprovalRequestsV1ApprovalRequestsGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/approval-requests',
+    ...options
+});
+
+/**
+ * Get Approval Request
+ */
+export const getApprovalRequestV1ApprovalRequestsRequestIdGet = <ThrowOnError extends boolean = false>(options: Options<GetApprovalRequestV1ApprovalRequestsRequestIdGetData, ThrowOnError>): RequestResult<GetApprovalRequestV1ApprovalRequestsRequestIdGetResponses, GetApprovalRequestV1ApprovalRequestsRequestIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetApprovalRequestV1ApprovalRequestsRequestIdGetResponses, GetApprovalRequestV1ApprovalRequestsRequestIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/approval-requests/{request_id}',
+    ...options
+});
+
+/**
+ * Decide Approval Request
+ */
+export const decideApprovalRequestV1ApprovalRequestsRequestIdPatch = <ThrowOnError extends boolean = false>(options: Options<DecideApprovalRequestV1ApprovalRequestsRequestIdPatchData, ThrowOnError>): RequestResult<DecideApprovalRequestV1ApprovalRequestsRequestIdPatchResponses, DecideApprovalRequestV1ApprovalRequestsRequestIdPatchErrors, ThrowOnError> => (options.client ?? client).patch<DecideApprovalRequestV1ApprovalRequestsRequestIdPatchResponses, DecideApprovalRequestV1ApprovalRequestsRequestIdPatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/approval-requests/{request_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Resend Approval Notification
+ */
+export const resendApprovalNotificationV1ApprovalRequestsRequestIdNotifyPost = <ThrowOnError extends boolean = false>(options: Options<ResendApprovalNotificationV1ApprovalRequestsRequestIdNotifyPostData, ThrowOnError>): RequestResult<ResendApprovalNotificationV1ApprovalRequestsRequestIdNotifyPostResponses, ResendApprovalNotificationV1ApprovalRequestsRequestIdNotifyPostErrors, ThrowOnError> => (options.client ?? client).post<ResendApprovalNotificationV1ApprovalRequestsRequestIdNotifyPostResponses, ResendApprovalNotificationV1ApprovalRequestsRequestIdNotifyPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/approval-requests/{request_id}/notify',
+    ...options
 });
 
 /**

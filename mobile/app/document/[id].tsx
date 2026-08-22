@@ -44,6 +44,9 @@ const activityLabels: Record<string, string> = {
   DOCUMENT_ANALYSIS_FAILED: '문서 분석을 완료하지 못했어요',
   PAGES_REPLACED: '문서 사진을 다시 등록했어요',
   REANALYSIS_REQUESTED: '문서를 다시 분석했어요',
+  APPROVAL_REQUESTED: '보호자에게 확인을 요청했어요',
+  APPROVAL_APPROVED: '보호자가 확인 요청을 승인했어요',
+  APPROVAL_REJECTED: '보호자가 확인 요청을 승인하지 않았어요',
 };
 
 function showError(title: string, error: unknown) {
@@ -166,6 +169,8 @@ export default function DocumentScreen() {
   const profile = useQuery({ queryKey: ['profile'], queryFn: api.profile });
   const relationships = useQuery({ queryKey: ['relationships'], queryFn: api.relationships, enabled: Boolean(document?.permissions.is_owner && view === 'actions') });
   const shares = useQuery({ queryKey: ['shares', id], queryFn: () => api.shares(id), enabled: Boolean(document?.permissions.is_owner && view === 'actions') });
+  const carePreferences = useQuery({ queryKey: ['care-preferences'], queryFn: api.carePreferences, enabled: Boolean(document?.permissions.is_owner && view === 'actions') });
+  const approvalRequests = useQuery({ queryKey: ['approval-requests'], queryFn: api.approvalRequests, enabled: Boolean(document?.permissions.is_owner && view === 'actions') });
   const activity = useQuery({ queryKey: ['activity', id], queryFn: () => api.activity(id), enabled: Boolean(document?.analysis && view === 'actions') });
   const firstImagePage = document?.pages.find((page) => page.original_available && page.mime_type.startsWith('image/'));
   const original = useQuery({
@@ -305,6 +310,26 @@ export default function DocumentScreen() {
 
   function openExternal(action: ActionItem) {
     if (!action.action_value) return;
+    const approval = approvalRequests.data?.find(
+      (request) => request.document_id === id && request.action_id === action.id,
+    );
+    if (
+      action.action_type === 'OPEN_URL'
+      && carePreferences.data?.require_guardian_confirmation
+      && approval?.status !== 'APPROVED'
+    ) {
+      Alert.alert(
+        approval?.status === 'PENDING' ? '보호자 답변을 기다리고 있어요' : '보호자 확인이 먼저 필요해요',
+        approval?.status === 'PENDING'
+          ? '보호자가 알림을 눌러 승인하면 공식 납부 화면을 열 수 있어요.'
+          : '가족에게 확인 요청을 보낸 뒤 다시 진행해 주세요.',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '확인 요청 보내기', onPress: () => router.push({ pathname: '/document/confirm-request' as never, params: { id } }) },
+        ],
+      );
+      return;
+    }
     const url = action.action_type === 'CALL' ? 'tel:' + action.action_value.replace(/[^0-9+]/g, '') : action.action_value;
     Alert.alert('외부 서비스로 이동할까요?', '이후 내용은 해당 기관에서 최종 확인해 주세요.', [{ text: '취소', style: 'cancel' }, { text: '이동', onPress: () => Linking.openURL(url) }]);
   }

@@ -11,7 +11,7 @@ DOCDO는 고지서와 공공기관·보험/금융 안내문을 쉬운 말로 설
 - 분석: 품질 확인 → Upstage Document Parse → Solar 구조화 추출 → 원문 근거 검증
 - 확인: 날짜·금액·계좌·대상 조건은 항상 사용자 확인 필요
 - 처리: 확인 완료 후 행동 상태 변경과 기기 로컬 알림 허용
-- 보호자: 15분·1회용 초대코드, 문서별 권한, 공유 취소 즉시 접근 차단
+- 보호자: 15분·1회용 초대코드, 문서별 권한, 승인 요청 푸시, 공유 취소 즉시 접근 차단
 - 보관: AES-GCM 암호화 원본은 7일 후 삭제하고 확인 결과·행동·감사 이력은 유지
 
 지원 범위 밖 문서는 `UNSUPPORTED`로 분류하고 자동 행동 안내를 생성하지 않습니다.
@@ -28,7 +28,8 @@ Expo (사용자/보호자)
       ├─ PostgreSQL: 분석·확인·행동·권한·감사 이력
       ├─ Redis/Celery: 비동기 분석·7일 원본 삭제
       ├─ MinIO: AES-GCM 암호화 원본
-      └─ Upstage: Document Parse + Solar
+      ├─ Upstage: Document Parse + Solar
+      └─ Expo Push: 보호자 승인 요청·답변 알림
 ```
 
 ## 로컬 실행
@@ -58,6 +59,19 @@ npm run start
 
 실기기에서는 `EXPO_PUBLIC_API_BASE_URL`을 개발 PC의 LAN 주소(예: `http://192.168.0.10:8000`)로 바꿉니다. 웹 정적 빌드는 `npm run web:build`로 생성합니다.
 
+### 보호자 푸시 설정
+
+실제 보호자 푸시는 Expo Push Service를 사용합니다. `expo-notifications`만 설치해서는 Android 푸시가 전달되지 않으므로 다음 외부 설정이 필요합니다.
+
+1. `cd mobile && npx eas login && npx eas init`으로 Expo 프로젝트를 연결합니다.
+2. Firebase에 Android 앱 `com.junctionasia.docdo`를 만들고 `google-services.json`을 `mobile/`에 둡니다.
+3. `app.json`의 `android.googleServicesFile`을 `./google-services.json`으로 지정합니다.
+4. Firebase 서비스 계정 JSON은 저장소에 넣지 않고 `eas credentials`에서 FCM V1 자격증명으로 업로드합니다.
+5. EAS 프로젝트 UUID를 `mobile/.env`의 `EXPO_PUBLIC_EAS_PROJECT_ID`와 GitHub Actions 변수에 설정합니다.
+6. 보호자 실기기에서 앱을 한 번 열고 알림 권한을 허용한 뒤 확인 요청을 보냅니다.
+
+잠금 화면 푸시에는 문서 제목·금액·기한을 넣지 않습니다. 알림 탭 뒤 JWT와 활성 공유 권한을 다시 확인한 경우에만 승인 내용을 보여줍니다.
+
 ## 대표 데모
 
 mock provider는 CI와 명시적인 데모에서만 사용합니다. 아래 흐름을 재현할 때만 `backend/.env`의 `PROVIDER_MODE=mock`으로 바꾸며, 실제 촬영 문서에는 사용하지 않습니다. mock provider는 파일명으로 대표 문서를 고릅니다.
@@ -75,9 +89,11 @@ mock provider는 CI와 명시적인 데모에서만 사용합니다. 아래 흐�
 2. 금액과 날짜를 원문 인용과 비교해 확인합니다.
 3. 문서 상태가 `READY`가 되면 행동을 시작하고 기한 하루 전 알림을 만듭니다.
 4. 보호자 계정에서 사용자의 6자리 초대코드를 수락합니다.
-5. 사용자가 결과·행동 권한으로 문서를 공유하고 보호자가 행동을 완료합니다.
-6. 사용자가 활동 이력을 확인한 뒤 공유를 취소합니다.
-7. 보호자가 같은 문서에 다시 접근하면 `404`로 차단됩니다.
+5. 사용자가 확인 요청을 보내면 보호자 기기에 개인정보 없는 푸시가 도착합니다.
+6. 보호자가 알림을 눌러 금액·기한·원문 근거를 확인하고 승인합니다.
+7. 승인 뒤에만 기관의 공식 HTTPS 납부 화면을 열고, 마지막 결제는 사용자가 직접 확정합니다.
+8. 사용자가 활동 이력을 확인한 뒤 공유를 취소합니다.
+9. 보호자가 같은 문서와 승인 요청에 다시 접근하면 `404`로 차단됩니다.
 
 `blurry-bill.jpg` 또는 `cropped-bill.jpg`는 재촬영 흐름을 재현합니다. 재촬영 화면에서 강행하면 모든 핵심 필드가 다시 확인 대상으로 설정됩니다.
 
@@ -104,7 +120,7 @@ UPSTAGE_STUDIO_POLL_SECONDS=1
 
 ## API와 클라이언트 생성
 
-주요 API는 `/v1/documents`, `/v1/care-invitations`, `/v1/care-relationships`, `/v1/reminders`, `/v1/dashboard`, `/v1/events` 아래에 있습니다. 응답에는 전체 OCR 텍스트나 저장소 키가 포함되지 않습니다.
+주요 API는 `/v1/documents`, `/v1/care-invitations`, `/v1/care-relationships`, `/v1/approval-requests`, `/v1/push-tokens`, `/v1/reminders`, `/v1/dashboard`, `/v1/events` 아래에 있습니다. 응답에는 전체 OCR 텍스트나 저장소 키가 포함되지 않습니다.
 
 FastAPI를 실행한 뒤 생성 클라이언트를 갱신합니다. `mobile/src/api/generated`는 직접 수정하지 않습니다.
 

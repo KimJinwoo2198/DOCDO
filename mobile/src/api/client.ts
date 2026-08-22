@@ -6,6 +6,7 @@ import { clearTokens, loadTokens, saveTokens } from '@/api/tokenStore';
 import type {
   ActionItem,
   ActionStatus,
+  ApprovalRequest,
   AuditEvent,
   CareInvitation,
   CarePreferences,
@@ -253,6 +254,33 @@ export const api = {
       body: JSON.stringify(update),
     }),
   deleteReminder: (id: string) => apiFetch<void>(`/v1/reminders/${id}`, { method: 'DELETE' }),
+  registerPushToken: (expoPushToken: string, platform: 'android' | 'ios') =>
+    apiFetch<{ id: string; platform: 'android' | 'ios'; created_at: string; updated_at: string }>(
+      '/v1/push-tokens',
+      {
+        method: 'POST',
+        body: JSON.stringify({ expo_push_token: expoPushToken, platform }),
+      },
+    ),
+  unregisterPushToken: (expoPushToken: string) =>
+    apiFetch<void>('/v1/push-tokens/unregister', {
+      method: 'POST',
+      body: JSON.stringify({ expo_push_token: expoPushToken }),
+    }),
+  approvalRequests: () => apiFetch<ApprovalRequest[]>('/v1/approval-requests'),
+  approvalRequest: (id: string) => apiFetch<ApprovalRequest>(`/v1/approval-requests/${id}`),
+  createApprovalRequest: (documentId: string, relationshipId: string, actionId?: string) =>
+    apiFetch<ApprovalRequest>(`/v1/documents/${documentId}/approval-requests`, {
+      method: 'POST',
+      body: JSON.stringify({ relationship_id: relationshipId, action_id: actionId }),
+    }),
+  decideApprovalRequest: (id: string, decision: 'APPROVE' | 'REJECT') =>
+    apiFetch<ApprovalRequest>(`/v1/approval-requests/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ decision }),
+    }),
+  resendApprovalNotification: (id: string) =>
+    apiFetch<ApprovalRequest>(`/v1/approval-requests/${id}/notify`, { method: 'POST' }),
   event: (eventName: string, documentId?: string, properties: Record<string, unknown> = {}) =>
     apiFetch<void>('/v1/events', {
       method: 'POST',

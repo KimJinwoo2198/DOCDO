@@ -57,6 +57,10 @@ class Settings(BaseSettings):
 
     invitation_ttl_minutes: int = 15
     invitation_attempt_limit: int = 10
+    approval_request_ttl_hours: int = 24
+    expo_push_url: str = "https://exp.host/--/api/v2/push/send"
+    expo_access_token: str | None = None
+    push_delivery_enabled: bool = True
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -88,6 +92,8 @@ class Settings(BaseSettings):
                 raise RuntimeError("UPSTAGE_STUDIO_POLL_SECONDS must be greater than 0")
         if not 0 <= self.min_field_confidence <= 1:
             raise RuntimeError("MIN_FIELD_CONFIDENCE must be between 0 and 1")
+        if self.approval_request_ttl_hours < 1:
+            raise RuntimeError("APPROVAL_REQUEST_TTL_HOURS must be at least 1")
 
 
 @lru_cache

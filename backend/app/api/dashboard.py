@@ -27,6 +27,9 @@ _activity_copy: dict[str, tuple[str, ActivityTone]] = {
     "DOCUMENT_SHARED": ("가족과 문서를 공유했어요", "INFO"),
     "DOCUMENT_AUTO_SHARED": ("새 문서를 가족에게 공유했어요", "INFO"),
     "SHARE_REVOKED": ("문서 공유가 취소됐어요", "WARNING"),
+    "APPROVAL_REQUESTED": ("가족 확인 요청이 왔어요", "INFO"),
+    "APPROVAL_APPROVED": ("가족이 확인 요청을 승인했어요", "SUCCESS"),
+    "APPROVAL_REJECTED": ("가족이 확인 요청을 승인하지 않았어요", "WARNING"),
 }
 
 

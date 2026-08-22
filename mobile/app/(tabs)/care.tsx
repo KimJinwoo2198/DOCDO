@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native';
 
@@ -101,7 +102,13 @@ export default function CareScreen() {
   const relationships = useQuery({ queryKey: ['relationships'], queryFn: api.relationships });
   const preferences = useQuery({ queryKey: ['care-preferences'], queryFn: api.carePreferences, enabled: user?.role === 'USER' });
   const dashboard = useQuery({ queryKey: ['dashboard'], queryFn: api.dashboard });
+  const approvalRequests = useQuery({
+    queryKey: ['approval-requests'],
+    queryFn: api.approvalRequests,
+    enabled: user?.role === 'GUARDIAN',
+  });
   const active = (relationships.data ?? []).filter((item) => item.status === 'ACTIVE');
+  const pendingApprovals = (approvalRequests.data ?? []).filter((item) => item.status === 'PENDING');
 
   const invite = useMutation({
     mutationFn: api.createInvitation,
@@ -225,6 +232,36 @@ export default function CareScreen() {
         </View>
       ) : null}
 
+      {user?.role === 'GUARDIAN' ? (
+        <View style={styles.section}>
+          <AppText style={styles.sectionTitle}>확인 요청</AppText>
+          {pendingApprovals.length ? (
+            <View style={styles.requestList}>
+              {pendingApprovals.map((request) => (
+                <Pressable
+                  accessibilityLabel={request.owner_name + '님의 ' + request.document_title + ' 확인하기'}
+                  accessibilityRole="button"
+                  key={request.id}
+                  onPress={() => router.push({ pathname: '/approval/[id]' as never, params: { id: request.id } })}
+                  style={({ pressed }) => [styles.requestRow, pressed && styles.pressed]}
+                >
+                  <View style={styles.requestIcon}>
+                    <Ionicons color={colors.foregroundBrand} name="notifications" size={22} />
+                  </View>
+                  <View style={styles.requestCopy}>
+                    <AppText style={styles.requestTitle}>{request.document_title}</AppText>
+                    <AppText style={styles.requestMeta}>{request.owner_name}님 · 승인 기다리는 중</AppText>
+                  </View>
+                  <Ionicons color={colors.foregroundSecondary} name="chevron-forward" size={20} />
+                </Pressable>
+              ))}
+            </View>
+          ) : (
+            <EmptyState description="가족이 확인을 요청하면 바로 여기에 보여요." icon="checkmark-done-outline" title="기다리는 요청이 없어요" />
+          )}
+        </View>
+      ) : null}
+
       <View style={styles.section}>
         <AppText style={styles.sectionTitle}>최근 알림</AppText>
         {dashboard.data?.recent_activity?.length ? (
@@ -299,6 +336,12 @@ const styles = StyleSheet.create({
   addButton: { alignItems: 'center', backgroundColor: colors.backgroundBrandWeak, borderRadius: radii.md, height: sizes.iconButton, justifyContent: 'center', minHeight: 48, minWidth: 48, width: sizes.iconButton },
   section: { gap: spacing.x3 },
   sectionTitle: { ...typography.title, color: colors.foregroundPrimary },
+  requestList: { gap: spacing.x3 },
+  requestRow: { alignItems: 'center', borderColor: colors.lineDefault, borderRadius: radii.card, borderWidth: 1, flexDirection: 'row', gap: spacing.x3, minHeight: sizes.row, paddingHorizontal: spacing.x4, paddingVertical: spacing.x3 },
+  requestIcon: { alignItems: 'center', backgroundColor: colors.backgroundBrandWeak, borderRadius: radii.md, height: 48, justifyContent: 'center', width: 48 },
+  requestCopy: { flex: 1 },
+  requestTitle: { ...typography.title, color: colors.foregroundPrimary },
+  requestMeta: { ...typography.bodySmall, color: colors.foregroundSecondary, marginTop: spacing.x1 },
   familyCard: { minHeight: 142 },
   members: { alignItems: 'flex-start', columnGap: spacing.x1, flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.x3 },
   member: { alignItems: 'center', minHeight: 104, width: 76 },

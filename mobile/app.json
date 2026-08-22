@@ -46,7 +46,7 @@
         }
       ],
       "expo-document-picker",
-      "./plugins/with-local-notifications-only",
+      "expo-notifications",
       "expo-font"
     ],
     "experiments": {

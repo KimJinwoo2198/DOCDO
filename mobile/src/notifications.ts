@@ -5,7 +5,7 @@ import type { Reminder } from '@/types';
 
 let notificationsPromise: Promise<typeof import('expo-notifications')> | null = null;
 
-async function getNotifications() {
+export async function getNotifications() {
   if (!notificationsPromise) {
     notificationsPromise = import('expo-notifications').then((module) => {
       module.setNotificationHandler({

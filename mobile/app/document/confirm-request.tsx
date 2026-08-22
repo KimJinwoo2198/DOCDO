@@ -15,9 +15,10 @@ import { ToggleRow } from '@/components/ToggleRow';
 import { TopBar } from '@/components/TopBar';
 import { colors, radii, sizes, spacing, typography } from '@/theme';
 
-type DeliveryMethod = 'SMS' | 'KAKAO' | 'CALL';
+type DeliveryMethod = 'APP' | 'SMS' | 'KAKAO' | 'CALL';
 
 const methods: { value: DeliveryMethod; title: string; description: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: 'APP', title: '앱 알림', description: '바로 승인 요청', icon: 'notifications-outline' },
   { value: 'SMS', title: '문자', description: '큰 글씨 안내', icon: 'chatbubble-outline' },
   { value: 'KAKAO', title: '카카오톡', description: '버튼형 메시지', icon: 'chatbubbles-outline' },
   { value: 'CALL', title: '전화 안내', description: '음성으로 읽기', icon: 'call-outline' },
@@ -28,8 +29,9 @@ export default function ConfirmRequestScreen() {
   const document = useQuery({ queryKey: ['document', id], queryFn: () => api.document(id), enabled: Boolean(id) });
   const relationships = useQuery({ queryKey: ['relationships'], queryFn: api.relationships });
   const profile = useQuery({ queryKey: ['profile'], queryFn: api.profile });
-  const [method, setMethod] = useState<DeliveryMethod>('SMS');
+  const [method, setMethod] = useState<DeliveryMethod>('APP');
   const [accessible, setAccessible] = useState(true);
+  const [sending, setSending] = useState(false);
   const active = relationships.data?.find((item) => item.status === 'ACTIVE');
   const detail = document.data;
   const familyName = active ? (active.guardian_name || active.owner_name) : '가족';
@@ -47,7 +49,32 @@ export default function ConfirmRequestScreen() {
 
   async function send() {
     if (!detail) return;
+    setSending(true);
     try {
+      if (method === 'APP') {
+        if (!active) return;
+        const action = detail.actions.find((item) => item.action_type === 'OPEN_URL' && item.status !== 'DONE')
+          ?? detail.actions.find((item) => item.status !== 'DONE');
+        const request = await api.createApprovalRequest(detail.id, active.id, action?.id);
+        await api.event('confirmation_request_started', id, {
+          method: 'app',
+          accessible: accessible ? 'on' : 'off',
+        }).catch(() => undefined);
+        if (request.delivery_status === 'SENT') {
+          Alert.alert('보호자에게 알림을 보냈어요', '알림을 누르면 승인 화면이 바로 열려요.');
+        } else if (request.delivery_status === 'NO_DEVICE') {
+          Alert.alert(
+            '보호자 기기에 알림을 보낼 수 없어요',
+            '보호자가 DOCDO를 한 번 열고 알림을 허용한 뒤 다시 보내거나 문자를 선택해 주세요.',
+          );
+        } else {
+          Alert.alert(
+            '알림 전송이 늦어지고 있어요',
+            '요청은 보호자 화면에 저장했어요. 문자를 함께 보내면 바로 확인할 수 있어요.',
+          );
+        }
+        return;
+      }
       if (method === 'CALL') {
         Speech.speak(message, { language: 'ko-KR', rate: profile.data?.speech_rate ?? 0.9 });
         await api.event('confirmation_request_started', id, { method: 'call' });
@@ -65,6 +92,8 @@ export default function ConfirmRequestScreen() {
       await api.event('confirmation_request_started', id, { method: method.toLowerCase(), accessible: accessible ? 'on' : 'off' });
     } catch {
       Alert.alert('확인 요청을 열지 못했어요', '다른 전달 방법을 선택하거나 내용을 직접 읽어 주세요.');
+    } finally {
+      setSending(false);
     }
   }
 
@@ -81,7 +110,15 @@ export default function ConfirmRequestScreen() {
   return (
     <Screen
       contentContainerStyle={styles.screen}
-      footer={<AppButton icon="arrow-forward" label="확인 요청 보내기" onPress={send} />}
+      footer={(
+        <AppButton
+          icon="arrow-forward"
+          label={method === 'APP' ? '보호자 앱으로 요청 보내기' : '확인 요청 보내기'}
+          loading={sending}
+          loadingLabel="확인 요청 보내는 중"
+          onPress={send}
+        />
+      )}
     >
       <TopBar title={familyName + '님께 확인받기'} />
       <Card style={styles.familyCard} variant="brand">
@@ -118,6 +155,15 @@ export default function ConfirmRequestScreen() {
       <Card padding="compact" variant="subtle">
         <ToggleRow description="가족이 읽기 쉽게 전달해요" onChange={setAccessible} title="큰 글씨 + 음성 안내" value={accessible} />
       </Card>
+
+      {method === 'APP' ? (
+        <Card padding="compact" variant="subtle">
+          <View style={styles.privacyRow}>
+            <Ionicons color={colors.foregroundSecondary} name="shield-checkmark-outline" size={22} />
+            <AppText style={styles.privacyText}>쉬운 설명과 할 일만 보호자에게 공유해요. 원문은 보내지 않아요.</AppText>
+          </View>
+        </Card>
+      ) : null}
     </Screen>
   );
 }
@@ -141,11 +187,13 @@ const styles = StyleSheet.create({
   messageLarge: { fontSize: 20, lineHeight: 30 },
   approval: { alignItems: 'center', alignSelf: 'flex-end', backgroundColor: colors.successWeak, borderRadius: radii.full, justifyContent: 'center', marginTop: spacing.x3, minHeight: 30, paddingHorizontal: spacing.x4 },
   approvalText: { ...typography.micro, color: colors.success, fontFamily: typography.caption.fontFamily },
-  methods: { flexDirection: 'row', gap: spacing.x3 },
-  method: { alignItems: 'center', borderColor: colors.lineDefault, borderRadius: radii.card, borderWidth: 1, flex: 1, minHeight: 106, padding: spacing.x2 },
+  methods: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.x3 },
+  method: { alignItems: 'center', borderColor: colors.lineDefault, borderRadius: radii.card, borderWidth: 1, flexBasis: '46%', flexGrow: 1, minHeight: 106, padding: spacing.x2 },
   methodSelected: { backgroundColor: colors.backgroundBrandWeak, borderColor: colors.lineFocus },
   methodIcon: { alignItems: 'center', backgroundColor: colors.backgroundSecondary, borderRadius: radii.button, height: 48, justifyContent: 'center', width: 48 },
   methodIconSelected: { backgroundColor: colors.backgroundPrimary },
   methodTitle: { ...typography.caption, color: colors.foregroundPrimary, fontFamily: typography.title.fontFamily, marginTop: spacing.x1 },
   methodDescription: { ...typography.micro, color: colors.foregroundSecondary, textAlign: 'center' },
+  privacyRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.x3 },
+  privacyText: { ...typography.bodySmall, color: colors.foregroundSecondary, flex: 1 },
 });
