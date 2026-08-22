@@ -15,7 +15,6 @@ jobs:
         working-directory: mobile
     env:
       EXPO_PUBLIC_API_BASE_URL: http://192.168.0.55:8002
-      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
 
     steps:
       - name: Check out repository

@@ -21,3 +21,4 @@ mobile/web-build/
 output/playwright/
 celerybeat-schedule*
 *.log
+*firebase-adminsdk*.json

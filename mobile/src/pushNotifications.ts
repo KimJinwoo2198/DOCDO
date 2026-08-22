@@ -13,8 +13,8 @@ const APPROVAL_CHANNEL = 'approval-requests';
 function projectId(): string | undefined {
   return (
     process.env.EXPO_PUBLIC_EAS_PROJECT_ID
-    ?? Constants.expoConfig?.extra?.eas?.projectId
-    ?? Constants.easConfig?.projectId
+    || Constants.expoConfig?.extra?.eas?.projectId
+    || Constants.easConfig?.projectId
   );
 }
 

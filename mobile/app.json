@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.junctionasia.docdo",
+      "googleServicesFile": "./google-services.json",
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ],
@@ -51,6 +52,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5fa62522-f984-40ee-b8c9-ec7f034c82a5"
+      }
+    },
+    "owner": "jinwookim1"
   }
 }

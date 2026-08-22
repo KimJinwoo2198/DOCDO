@@ -63,11 +63,11 @@ npm run start
 
 실제 보호자 푸시는 Expo Push Service를 사용합니다. `expo-notifications`만 설치해서는 Android 푸시가 전달되지 않으므로 다음 외부 설정이 필요합니다.
 
-1. `cd mobile && npx eas login && npx eas init`으로 Expo 프로젝트를 연결합니다.
+1. `cd mobile && npx eas login && npx eas init`으로 Expo 프로젝트를 연결합니다. 연결된 UUID는 `app.json`의 `extra.eas.projectId`에 저장됩니다.
 2. Firebase에 Android 앱 `com.junctionasia.docdo`를 만들고 `google-services.json`을 `mobile/`에 둡니다.
 3. `app.json`의 `android.googleServicesFile`을 `./google-services.json`으로 지정합니다.
 4. Firebase 서비스 계정 JSON은 저장소에 넣지 않고 `eas credentials`에서 FCM V1 자격증명으로 업로드합니다.
-5. EAS 프로젝트 UUID를 `mobile/.env`의 `EXPO_PUBLIC_EAS_PROJECT_ID`와 GitHub Actions 변수에 설정합니다.
+5. 다른 Expo 프로젝트로 빌드할 때만 `mobile/.env`의 `EXPO_PUBLIC_EAS_PROJECT_ID`로 프로젝트 UUID를 덮어씁니다.
 6. 보호자 실기기에서 앱을 한 번 열고 알림 권한을 허용한 뒤 확인 요청을 보냅니다.
 
 잠금 화면 푸시에는 문서 제목·금액·기한을 넣지 않습니다. 알림 탭 뒤 JWT와 활성 공유 권한을 다시 확인한 경우에만 승인 내용을 보여줍니다.
