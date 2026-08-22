@@ -21,6 +21,8 @@ os.environ["PROVIDER_MODE"] = "mock"
 os.environ["LOCAL_STORAGE_PATH"] = ".data/docdo-test-storage"
 os.environ["REDIS_URL"] = "redis://127.0.0.1:6399/15"
 
+Path(".data").mkdir(parents=True, exist_ok=True)
+
 from app.db import Base, engine
 from app.main import app
 from app.api.care import _fallback_attempts
