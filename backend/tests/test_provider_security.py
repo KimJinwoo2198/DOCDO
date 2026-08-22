@@ -14,6 +14,7 @@ from app.domain import (
     ActionType,
     DocumentCategory,
     DocumentUnderstanding,
+    FieldType,
     ParsedDocument,
     ParsedElement,
     SourceAnchor,
@@ -188,6 +189,97 @@ def test_studio_extract_json_without_citations_uses_embedded_quotes() -> None:
     assert anchor_is_grounded(parsed, result.fields[0].source_anchor)
 
 
+def test_compact_studio_schema_maps_generic_fields_without_model_confidence() -> None:
+    parsed = ParsedDocument(
+        text=(
+            "전기요금 납부 고지서\n"
+            "이번 달 전기요금을 납부해야 합니다.\n"
+            "납부 기한: 2026년 9월 18일\n"
+            "납부 금액: 83,420원\n"
+            "기한을 넘기면 연체료가 발생할 수 있습니다."
+        ),
+        elements=[
+            ParsedElement(id="p1-e1", page=1, text="전기요금 납부 고지서"),
+            ParsedElement(
+                id="p1-e2", page=1, text="이번 달 전기요금을 납부해야 합니다."
+            ),
+            ParsedElement(id="p1-e3", page=1, text="납부 기한: 2026년 9월 18일"),
+            ParsedElement(id="p1-e4", page=1, text="납부 금액: 83,420원"),
+            ParsedElement(
+                id="p1-e5", page=1, text="기한을 넘기면 연체료가 발생할 수 있습니다."
+            ),
+        ],
+    )
+    payload = {
+        "document_title": "전기요금 납부 고지서",
+        "received_reason": "이번 달 전기요금을 납부해야 합니다.",
+        "important_impact": "기한을 넘기면 연체료가 발생할 수 있습니다.",
+        "cautions": [
+            {
+                "text": "기한을 넘기면 연체료가 발생할 수 있습니다.",
+                "page": 1,
+                "quote": "기한을 넘기면 연체료가 발생할 수 있습니다.",
+            }
+        ],
+        "fields": [
+            {
+                "field_type": "DATE",
+                "label": "납부 기한",
+                "value": "2026년 9월 18일",
+                "page": 1,
+                "quote": "납부 기한: 2026년 9월 18일",
+            },
+            {
+                "field_type": "AMOUNT",
+                "label": "납부 금액",
+                "value": "83,420원",
+                "page": 1,
+                "quote": "납부 금액: 83,420원",
+            },
+        ],
+    }
+
+    result = _studio_understanding(
+        parsed,
+        StudioAgentResult(text=json.dumps(payload, ensure_ascii=False), citations=[]),
+    )
+
+    assert result.category == DocumentCategory.BILL
+    assert result.reason_received == "이번 달 전기요금을 납부해야 합니다."
+    assert result.why_important == "기한을 넘기면 연체료가 발생할 수 있습니다."
+    assert {field.key for field in result.fields} == {"due_date", "amount"}
+    assert next(field.value for field in result.fields if field.key == "due_date") == "2026-09-18"
+    assert next(field.value for field in result.fields if field.key == "amount") == 83420
+    assert all(field.confidence is None for field in result.fields)
+    assert result.actions[0].linked_field_key == "due_date"
+    assert result.actions[0].due_at is not None
+    assert result.actions[0].due_at.isoformat() == "2026-09-18T09:00:00+09:00"
+
+
+def test_compact_studio_citations_infer_generic_field_types() -> None:
+    parsed = studio_parsed_fixture()
+    text = (
+        '"문서 제목은 **전기요금 납부 고지서**입니다.【†1】\n'
+        '- 납부 금액은 **83,420원**으로 보이며, **직접 확인 필요**합니다.【†2】\n'
+        '- 납부 기한은 **2026년 9월 18일**로 보이며, '
+        '**직접 확인 필요**합니다.【†3】"'
+    )
+    citations = [
+        {"index": 1, "source_ref": "document_title", "page": 1},
+        {"index": 2, "source_ref": "fields[0].value", "page": 1},
+        {"index": 3, "source_ref": "fields[1].value", "page": 1},
+    ]
+
+    result = _studio_understanding(parsed, StudioAgentResult(text=text, citations=citations))
+
+    assert {field.field_type for field in result.fields} == {
+        FieldType.AMOUNT,
+        FieldType.DATE,
+    }
+    assert any(field.value == 83420 for field in result.fields)
+    assert any(field.value == "2026-09-18" for field in result.fields)
+
+
 @pytest.mark.asyncio
 async def test_studio_provider_uses_files_and_responses_api() -> None:
     parsed = studio_parsed_fixture()
@@ -256,6 +348,45 @@ async def test_studio_provider_uses_files_and_responses_api() -> None:
 
 
 @pytest.mark.asyncio
+async def test_studio_provider_explains_missing_saved_config() -> None:
+    context = StudioAssetContext(
+        assets=[ProviderAsset(b"image", "image/jpeg", "notice.jpg", 1)]
+    )
+    settings = Settings(
+        provider_mode="studio",
+        upstage_api_key="test-key",
+        upstage_studio_agent_id="agt_docdo",
+        upstage_studio_config_id="2",
+    )
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v2/files":
+            return httpx.Response(200, json={"id": "file_1"})
+        return httpx.Response(
+            404,
+            json={
+                "error": {
+                    "type": "invalid_request_error",
+                    "param": "id",
+                    "message": "No such config: 2",
+                }
+            },
+        )
+
+    provider = StudioDocumentUnderstandingProvider(settings, context)
+    await provider.client.aclose()
+    provider.client = httpx.AsyncClient(
+        base_url="https://api.upstage.ai/v2",
+        transport=httpx.MockTransport(handler),
+    )
+    try:
+        with pytest.raises(ProviderError, match="저장된 설정 번호"):
+            await provider.understand(studio_parsed_fixture())
+    finally:
+        await provider.client.aclose()
+
+
+@pytest.mark.asyncio
 async def test_anchors_and_external_urls_are_verified() -> None:
     parsed = parsed_fixture()
     verifier = DeterministicDocumentVerifier()
@@ -321,13 +452,22 @@ async def test_upstage_parser_accepts_polygon_coordinates() -> None:
                     {
                         "id": "amount",
                         "page": 1,
-                        "content": "납부 금액 83,420원",
+                        "content": {
+                            "html": "<p>납부 금액 83,420원</p>",
+                            "markdown": "",
+                            "text": "납부 금액 83,420원",
+                        },
                         "coordinates": [
                             {"x": 0.1, "y": 0.2},
                             {"x": 0.8, "y": 0.2},
                             {"x": 0.8, "y": 0.3},
                             {"x": 0.1, "y": 0.3},
                         ],
+                    },
+                    {
+                        "id": "amount",
+                        "page": 1,
+                        "content": {"text": "문의 123"},
                     }
                 ],
             },
@@ -343,6 +483,8 @@ async def test_upstage_parser_accepts_polygon_coordinates() -> None:
         await parser.client.aclose()
 
     assert parsed.elements[0].bbox == [0.1, 0.2, 0.8, 0.3]
+    assert parsed.elements[0].text == "납부 금액 83,420원"
+    assert len({element.id for element in parsed.elements}) == 2
 
 
 @pytest.mark.asyncio

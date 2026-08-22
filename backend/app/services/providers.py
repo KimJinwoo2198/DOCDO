@@ -320,6 +320,16 @@ class MockDocumentUnderstandingProvider(DocumentUnderstandingProvider):
         )
 
 
+def _document_parse_text(value: Any) -> str:
+    if isinstance(value, dict):
+        for key in ("text", "markdown", "html"):
+            candidate = value.get(key)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate
+        return ""
+    return str(value)
+
+
 class UpstageDocumentParser(DocumentParser):
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -345,10 +355,7 @@ class UpstageDocumentParser(DocumentParser):
             response.raise_for_status()
             payload = response.json()
             raw_content = payload.get("content") or payload.get("text") or ""
-            if isinstance(raw_content, dict):
-                text_value = str(raw_content.get("text") or raw_content.get("html") or "")
-            else:
-                text_value = str(raw_content)
+            text_value = _document_parse_text(raw_content)
             texts.append(text_value)
             raw_elements = payload.get("elements") or []
             if not raw_elements and text_value:
@@ -357,8 +364,11 @@ class UpstageDocumentParser(DocumentParser):
             for index, element in enumerate(raw_elements, start=1):
                 page = int(element.get("page") or element.get("page_id") or 1)
                 max_page = max(max_page, page)
-                element_text = str(
-                    element.get("content") or element.get("text") or element.get("html") or ""
+                element_text = _document_parse_text(
+                    element.get("content")
+                    or element.get("text")
+                    or element.get("html")
+                    or ""
                 )
                 if not element_text.strip():
                     continue
@@ -367,7 +377,10 @@ class UpstageDocumentParser(DocumentParser):
                 )
                 all_elements.append(
                     ParsedElement(
-                        id=f"a{asset.page_index}-{element.get('id') or index}",
+                        id=(
+                            f"a{asset.page_index}-{page}-{index}-"
+                            f"{element.get('id') or 'element'}"
+                        ),
                         page=page_offset + page,
                         text=element_text[:5000],
                         category=str(element.get("category") or "text"),
@@ -542,6 +555,20 @@ def _ensure_page_aggregate_elements(parsed: ParsedDocument) -> None:
             )
 
 
+def _bbox_overlap_ratio(first: list[float], second: list[float]) -> float:
+    left = max(first[0], second[0])
+    top = max(first[1], second[1])
+    right = min(first[2], second[2])
+    bottom = min(first[3], second[3])
+    if right <= left or bottom <= top:
+        return 0.0
+    intersection = (right - left) * (bottom - top)
+    first_area = max(0.0, first[2] - first[0]) * max(0.0, first[3] - first[1])
+    second_area = max(0.0, second[2] - second[0]) * max(0.0, second[3] - second[1])
+    smaller_area = min(first_area, second_area)
+    return intersection / smaller_area if smaller_area > 0 else 0.0
+
+
 def _studio_anchor(
     parsed: ParsedDocument,
     citation: dict[str, Any],
@@ -570,6 +597,22 @@ def _studio_anchor(
                     element_id=element.id,
                     bbox=element.bbox or _bbox_from_coordinates(citation.get("coordinates")),
                     quote=candidate[:1000],
+                )
+    citation_bbox = _bbox_from_coordinates(citation.get("coordinates"))
+    if citation_bbox is not None:
+        overlapping = [
+            (_bbox_overlap_ratio(element.bbox, citation_bbox), element)
+            for element in parsed.elements
+            if element.page in pages and element.bbox is not None and element.text.strip()
+        ]
+        if overlapping:
+            score, element = max(overlapping, key=lambda item: item[0])
+            if score >= 0.1:
+                return SourceAnchor(
+                    page=element.page,
+                    element_id=element.id,
+                    bbox=element.bbox,
+                    quote=element.text.strip()[:1000],
                 )
     return None
 
@@ -614,15 +657,105 @@ def _normalized_date(value: str) -> str:
     return f"{year:04d}-{month:02d}-{day:02d}"
 
 
+def _compact_citation_label_value(segment: str) -> tuple[str, str]:
+    cleaned = segment.strip(" -•.")
+    match = re.match(r"(?P<label>.{1,40}?)(?:은|는)\s+(?P<value>.+)", cleaned)
+    if not match:
+        label, separator, value = cleaned.partition(":")
+        return (label.strip(), value.strip()) if separator else ("", cleaned)
+    label = match.group("label").strip()
+    value = match.group("value").strip()
+    value = re.sub(
+        r"(?:으?로)?\s*보이며,?\s*직접 확인 필요합니다\.?$|입니다\.?$|"
+        r"라고 적혀 있습니다\.?$",
+        "",
+        value,
+    ).strip(" .")
+    return label, value
+
+
+def _studio_field_key(field_type: FieldType, ordinal: int) -> str:
+    if field_type == FieldType.DATE:
+        return "due_date" if ordinal == 1 else f"date_{ordinal}"
+    base_keys = {
+        FieldType.AMOUNT: "amount",
+        FieldType.ELIGIBILITY: "condition",
+        FieldType.PHONE: "contact",
+        FieldType.URL: "contact_url",
+        FieldType.DOCUMENT_LIST: "required_documents",
+        FieldType.ACCOUNT: "account",
+        FieldType.TEXT: "important_text",
+    }
+    base_key = base_keys[field_type]
+    return base_key if ordinal == 1 else f"{base_key}_{ordinal}"
+
+
+def _infer_compact_studio_field_type(label: str, value: str) -> FieldType:
+    normalized_label = re.sub(r"\s+", "", label)
+    if value.startswith("https://"):
+        return FieldType.URL
+    if any(
+        keyword in normalized_label
+        for keyword in ("날짜", "기한", "마감", "만기", "일자", "기간")
+    ):
+        return FieldType.DATE
+    if re.search(r"20\d{2}\D{0,3}\d{1,2}\D{0,3}\d{1,2}", value):
+        return FieldType.DATE
+    if any(
+        keyword in normalized_label
+        for keyword in (
+            "금액",
+            "요금",
+            "보험료",
+            "수수료",
+            "청구액",
+            "납부액",
+            "환급액",
+        )
+    ):
+        return FieldType.AMOUNT
+    if re.search(r"\d[\d,]*(?:원|만원|억원)\b", value):
+        return FieldType.AMOUNT
+    if "계좌" in normalized_label:
+        return FieldType.ACCOUNT
+    if any(keyword in normalized_label for keyword in ("전화", "문의", "고객센터", "담당부서")):
+        return FieldType.PHONE
+    if re.fullmatch(r"(?:\d{2,4}-)?\d{3,4}-\d{4}|1\d{3}", value.strip()):
+        return FieldType.PHONE
+    if any(keyword in normalized_label for keyword in ("대상", "조건", "자격", "요건")):
+        return FieldType.ELIGIBILITY
+    if any(
+        keyword in normalized_label
+        for keyword in ("준비물", "제출서류", "필요서류", "구비서류")
+    ):
+        return FieldType.DOCUMENT_LIST
+    return FieldType.TEXT
+
+
 def _studio_field(
     parsed: ParsedDocument,
     citation: dict[str, Any],
     segment: str,
 ) -> ExtractedFieldDraft | None:
     source_ref = str(citation.get("source_ref") or "")
-    if not source_ref or source_ref.startswith(("document_title", "cautions", "term_explanations")):
+    if not source_ref or source_ref.startswith(
+        (
+            "document_title",
+            "received_reason",
+            "reason_received",
+            "important_impact",
+            "why_important",
+            "cautions",
+            "term_explanations",
+        )
+    ):
         return None
-    label, separator, raw_value = segment.partition(":")
+    if source_ref.startswith("fields"):
+        label, raw_value = _compact_citation_label_value(segment)
+        separator = bool(label)
+    else:
+        label, separator_text, raw_value = segment.partition(":")
+        separator = bool(separator_text)
     if not separator:
         label = source_ref.split("[")[0].replace("_", " ").strip()
         raw_value = segment
@@ -657,6 +790,22 @@ def _studio_field(
         field_type = FieldType.ACCOUNT
         key = "account" if ordinal == 1 else f"account_{ordinal}"
         value = display_value
+    elif source_ref.startswith("fields"):
+        field_type = _infer_compact_studio_field_type(label, display_value)
+        key = _studio_field_key(field_type, ordinal)
+        if field_type == FieldType.DATE:
+            value = _normalized_date(display_value)
+        elif field_type == FieldType.AMOUNT:
+            digits = re.sub(r"[^0-9-]", "", display_value)
+            value = int(digits) if digits and digits not in {"-", ""} else display_value
+        elif field_type == FieldType.DOCUMENT_LIST:
+            value = [
+                item.strip()
+                for item in re.split(r"[,·]", display_value)
+                if item.strip()
+            ]
+        else:
+            value = display_value
     else:
         field_type = FieldType.TEXT
         key = re.sub(r"[^a-z0-9_:-]", "_", source_ref.casefold())[:120]
@@ -775,6 +924,7 @@ def _studio_structured_understanding(
     fields: list[ExtractedFieldDraft] = []
     direct_fields = payload.get("fields")
     if isinstance(direct_fields, list):
+        field_type_counts: dict[FieldType, int] = {}
         for index, raw_field in enumerate(direct_fields, start=1):
             if not isinstance(raw_field, dict):
                 continue
@@ -782,10 +932,14 @@ def _studio_structured_understanding(
                 field_type = FieldType(str(raw_field.get("field_type") or "TEXT"))
             except ValueError:
                 field_type = FieldType.TEXT
+            field_type_counts[field_type] = field_type_counts.get(field_type, 0) + 1
             field = _studio_structured_field(
                 parsed,
                 raw_field,
-                key=str(raw_field.get("key") or f"field_{index}"),
+                key=str(
+                    raw_field.get("key")
+                    or _studio_field_key(field_type, field_type_counts[field_type])
+                ),
                 label=str(raw_field.get("label") or f"중요 정보 {index}"),
                 field_type=field_type,
             )
@@ -861,8 +1015,12 @@ def _studio_structured_understanding(
             if term and explanation:
                 glossary.append({"term": term, "explanation": explanation})
 
-    reason_received = str(payload.get("reason_received") or "").strip()
-    why_important = str(payload.get("why_important") or "").strip()
+    reason_received = str(
+        payload.get("reason_received") or payload.get("received_reason") or ""
+    ).strip()
+    why_important = str(
+        payload.get("why_important") or payload.get("important_impact") or ""
+    ).strip()
     if category == DocumentCategory.UNSUPPORTED:
         reason_received = reason_received or "현재 지원 범위 밖의 문서를 확인했어요."
         why_important = why_important or "중요한 내용은 원문과 비교해 확인해 주세요."
@@ -945,15 +1103,37 @@ def _studio_understanding(
     fields: list[ExtractedFieldDraft] = []
     warnings: list[str] = []
     glossary: list[dict[str, str]] = []
+    extracted_reason = ""
+    extracted_impact = ""
     seen_keys: set[str] = set()
     seen_anchors: set[tuple[int, str, str]] = set()
     for citation, segment in citation_pairs:
         source_ref = str(citation.get("source_ref") or "")
         if source_ref.startswith("document_title"):
-            candidate = re.sub(r"^이 문서는\s*", "", segment).strip()
+            candidate = re.sub(r"^(?:이 문서는|문서 제목은)\s*", "", segment).strip()
             candidate = re.sub(r"\s*입니다\.?$", "", candidate).strip()
             title = candidate or title
             anchor = _studio_anchor(parsed, citation, [candidate, segment])
+            if anchor is not None:
+                anchor_key = (anchor.page, anchor.element_id, anchor.quote)
+                if anchor_key not in seen_anchors:
+                    seen_anchors.add(anchor_key)
+                    source_anchors.append(anchor)
+            continue
+        if source_ref.startswith(("received_reason", "reason_received")):
+            _, extracted_value = _compact_citation_label_value(segment)
+            extracted_reason = extracted_value or extracted_reason
+            anchor = _studio_anchor(parsed, citation, [extracted_reason, segment])
+            if anchor is not None:
+                anchor_key = (anchor.page, anchor.element_id, anchor.quote)
+                if anchor_key not in seen_anchors:
+                    seen_anchors.add(anchor_key)
+                    source_anchors.append(anchor)
+            continue
+        if source_ref.startswith(("important_impact", "why_important")):
+            _, extracted_value = _compact_citation_label_value(segment)
+            extracted_impact = extracted_value or extracted_impact
+            anchor = _studio_anchor(parsed, citation, [extracted_impact, segment])
             if anchor is not None:
                 anchor_key = (anchor.page, anchor.element_id, anchor.quote)
                 if anchor_key not in seen_anchors:
@@ -1014,7 +1194,9 @@ def _studio_understanding(
             "",
         ),
     }
-    reason_received, why_important, action_title = descriptions[category]
+    default_reason, default_impact, action_title = descriptions[category]
+    reason_received = extracted_reason or default_reason
+    why_important = extracted_impact or default_impact
     actions: list[ActionItemDraft] = []
     if category != DocumentCategory.UNSUPPORTED:
         due_field = next((item for item in fields if item.field_type == FieldType.DATE), None)
@@ -1102,6 +1284,11 @@ class StudioDocumentUnderstandingProvider(DocumentUnderstandingProvider):
                 ],
             },
         )
+        if response.status_code == 404:
+            raise ProviderError(
+                "Upstage Studio 설정을 찾지 못했어요. "
+                "저장된 설정 번호를 확인한 뒤 다시 분석해 주세요."
+            )
         response.raise_for_status()
         payload = response.json()
         job_id = payload.get("id") or payload.get("job_id")

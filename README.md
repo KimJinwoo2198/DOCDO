@@ -109,14 +109,28 @@ UPSTAGE_DOCUMENT_MODEL=document-parse
 UPSTAGE_SOLAR_MODEL=solar-pro4
 UPSTAGE_STUDIO_BASE_URL=https://api.upstage.ai/v2
 UPSTAGE_STUDIO_AGENT_ID=agt_...
-UPSTAGE_STUDIO_CONFIG_ID=1
+UPSTAGE_STUDIO_CONFIG_ID=2
 UPSTAGE_STUDIO_TIMEOUT_SECONDS=240
 UPSTAGE_STUDIO_POLL_SECONDS=1
 ```
 
 백엔드는 안정 버전 Document Parse로 원문 element와 좌표를 확보한 뒤, 원본 파일을 Studio v2 `/files`에 등록하고 `/responses`에서 Studio Agent를 실행합니다. Studio Agent는 `Parse → Classify → 유형별 Extract → 쉬운 설명 Instruct → 안전 검토 Instruct`를 수행합니다. 앱에 저장하기 전 Studio citation을 직접 파싱한 element와 다시 대조하여 `SourceAnchor(page, element_id, bbox, quote)`가 없는 필드·행동은 제거합니다. Agent ID와 Config ID는 provider 감사 로그와 분석 모델 버전에 기록하며, Studio 실패를 mock 결과로 대체하지 않습니다.
 
-현재 DOCDO Studio Agent는 `BILL`, `PUBLIC_NOTICE`, `INSURANCE_FINANCE`, `UNSUPPORTED`를 분류하고 문서 유형별로 날짜·금액·조건·문의처·준비물·계좌와 citation을 추출합니다. `PROVIDER_MODE=upstage`는 Studio 장애를 자동 우회하는 fallback이 아니라 개발자가 명시적으로 선택하는 직접 Parse+Solar 진단 모드입니다.
+현재 DOCDO Studio Agent의 저장된 설정은 `config 2`입니다. `BILL`, `PUBLIC_NOTICE`, `INSURANCE_FINANCE`, `UNSUPPORTED`를 분류한 뒤 지원 문서에서는 공통 핵심 항목 13개, 미지원 문서에서는 원문 설명 2개만 Extract합니다. 이전 유형별 중복 스키마 210개를 41개로 줄여 Studio 처리 시간을 단축했고, 날짜·금액·조건·문의처·준비물·계좌와 citation 검증은 그대로 유지합니다. 최적화된 가져오기 파일은 `studio/DOCDO-Studio-optimized.json`이며, 기존 Studio 내보내기 파일을 다시 최적화할 때는 다음 명령을 사용합니다.
+
+```bash
+jq -f scripts/optimize-studio-config.jq studio/DOCDO-Studio-export.json \
+  > studio/DOCDO-Studio-optimized.json
+```
+
+가져온 설정은 Studio 화면에서 테스트 문서를 실행해 반드시 저장한 뒤 그 Config ID를 환경변수에 넣습니다. 저장 전 초안 번호를 API에 사용하면 `/v2/responses`가 `404 No such config`를 반환합니다. API 키가 있는 개발 환경에서는 저장된 설정을 실제 Parse 결과와 함께 검증할 수 있습니다.
+
+```bash
+cd backend
+uv run python scripts/studio_smoke.py ../studio/docdo-studio-smoke-bill.pdf
+```
+
+`PROVIDER_MODE=upstage`는 Studio 장애를 자동 우회하는 fallback이 아니라 개발자가 명시적으로 선택하는 직접 Parse+Solar 진단 모드입니다.
 
 ## API와 클라이언트 생성
 
