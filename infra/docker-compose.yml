@@ -1,0 +1,143 @@
+name: docdo
+
+x-backend-environment: &backend-environment
+  APP_NAME: DOCDO API
+  ENVIRONMENT: production
+  DATABASE_URL: postgresql+asyncpg://docdo:${POSTGRES_PASSWORD}@postgres:5432/docdo
+  REDIS_URL: redis://redis:6379/0
+  JWT_SECRET: ${JWT_SECRET}
+  DOCUMENT_ENCRYPTION_KEY: ${DOCUMENT_ENCRYPTION_KEY}
+  CORS_ORIGINS: ${CORS_ORIGINS:-https://${DOMAIN}}
+  ANALYSIS_INLINE: "false"
+  MAX_UPLOAD_BYTES: "15728640"
+  MAX_DOCUMENT_BYTES: "31457280"
+  MAX_DOCUMENT_PAGES: "10"
+  STORAGE_DRIVER: s3
+  S3_ENDPOINT_URL: http://minio:9000
+  S3_ACCESS_KEY: ${MINIO_ROOT_USER:-docdo-admin}
+  S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+  S3_BUCKET: docdo-assets
+  S3_REGION: ap-northeast-2
+  ASSET_RETENTION_DAYS: "7"
+  PROVIDER_MODE: ${PROVIDER_MODE:-mock}
+  UPSTAGE_API_KEY: ${UPSTAGE_API_KEY:-}
+  UPSTAGE_BASE_URL: ${UPSTAGE_BASE_URL:-https://api.upstage.ai/v1}
+  UPSTAGE_DOCUMENT_MODEL: ${UPSTAGE_DOCUMENT_MODEL:-document-parse}
+  UPSTAGE_SOLAR_MODEL: ${UPSTAGE_SOLAR_MODEL:-solar-pro4}
+  INVITATION_TTL_MINUTES: "15"
+  INVITATION_ATTEMPT_LIMIT: "10"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: docdo
+      POSTGRES_USER: docdo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docdo -d docdo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: minio/minio:RELEASE.2025-07-23T15-54-02Z
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-docdo-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "127.0.0.1:9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    environment: *backend-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8000}:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  worker:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
+    environment: *backend-environment
+    depends_on:
+      api:
+        condition: service_healthy
+
+  beat:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    command: ["celery", "-A", "app.tasks.celery_app", "beat", "--loglevel=INFO"]
+    environment: *backend-environment
+    depends_on:
+      api:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+  caddy-data:
+  caddy-config:

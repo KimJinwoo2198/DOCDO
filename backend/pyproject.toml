@@ -1,0 +1,66 @@
+[project]
+name = "docdo-backend"
+version = "1.0.0"
+description = "Accessible document understanding and action support API"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "aiosqlite>=0.21.0",
+  "alembic>=1.16.0",
+  "asyncpg>=0.30.0",
+  "boto3>=1.40.0",
+  "celery[redis]>=5.5.0",
+  "cryptography>=45.0.0",
+  "email-validator>=2.2.0",
+  "fastapi>=0.116.0",
+  "httpx>=0.28.0",
+  "pillow>=11.0.0",
+  "psycopg[binary]>=3.2.0",
+  "pwdlib[argon2]>=0.2.1",
+  "pydantic-settings>=2.10.0",
+  "pyjwt>=2.10.0",
+  "python-multipart>=0.0.20",
+  "pypdf>=6.0.0",
+  "redis>=6.0.0",
+  "sqlalchemy[asyncio]>=2.0.40",
+  "structlog>=25.4.0",
+  "typer>=0.16.0",
+  "uvicorn[standard]>=0.35.0",
+]
+
+[dependency-groups]
+dev = [
+  "mypy>=1.17.0",
+  "pytest>=8.4.0",
+  "pytest-asyncio>=1.1.0",
+  "pytest-cov>=6.2.0",
+  "ruff>=0.12.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+check_untyped_defs = true
+warn_unused_ignores = true
+exclude = ["migrations"]
+
+[[tool.mypy.overrides]]
+module = ["boto3", "boto3.*", "celery", "celery.*"]
+ignore_missing_imports = true
