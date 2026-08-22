@@ -22,3 +22,4 @@ output/playwright/
 celerybeat-schedule*
 *.log
 *firebase-adminsdk*.json
+mobile/google-services.json

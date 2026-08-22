@@ -20,6 +20,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Restore Firebase Android configuration
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        shell: bash
+        run: |
+          if [[ -z "$GOOGLE_SERVICES_JSON" ]]; then
+            echo "GOOGLE_SERVICES_JSON repository secret is required" >&2
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > google-services.json
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
